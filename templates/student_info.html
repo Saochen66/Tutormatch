@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}需求信息 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>{% if mode == 'home' %}我的需求信息{% else %}填写需求信息{% endif %}</h1>
+    <p style="text-align: center; color: #666;">昵称: {{ current_user.nickname }}</p>
+</div>
+
+{% if mode == 'home' %}
+<div class="card">
+    {% if student_info %}
+    <div class="info-row">
+        <span class="info-label">性别:</span>
+        <span class="info-value">{{ student_info.gender }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">科目:</span>
+        <span class="info-value">{{ student_info.subjects }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">年级:</span>
+        <span class="info-value">{{ student_info.grade }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">授课方式:</span>
+        <span class="info-value">{{ student_info.teaching_mode }}</span>
+    </div>
+    {% if student_info.budget_upper %}
+    <div class="info-row">
+        <span class="info-label">预算上限:</span>
+        <span class="info-value">{{ student_info.budget_upper }}元/小时</span>
+    </div>
+    {% endif %}
+    {% if student_info.requirements %}
+    <div class="info-row">
+        <span class="info-label">补充要求:</span>
+        <span class="info-value">{{ student_info.requirements }}</span>
+    </div>
+    {% endif %}
+    {% if student_info.wechat %}
+    <div class="info-row">
+        <span class="info-label">微信号:</span>
+        <span class="info-value">{{ student_info.wechat }}</span>
+    </div>
+    {% endif %}
+    {% if student_info.listing_active == False %}
+    <div class="flash" style="margin-top: 14px;">您已撤回需求，当前不会在筛选列表与AI统计中展示。</div>
+    {% endif %}
+    <div class="grid-2" style="margin-top: 16px;">
+        <a href="{{ url_for('student_my_center') }}" class="menu-card tutor">
+            <div class="menu-icon">🧭</div>
+            <div class="menu-title">我的</div>
+            <div class="menu-desc">修改信息 / 撤回需求 / 我的收藏 / 注销账号</div>
+        </a>
+        <a href="{{ url_for('search_tutors') }}" class="menu-card student">
+            <div class="menu-icon">🔎</div>
+            <div class="menu-title">查询家教</div>
+            <div class="menu-desc">按条件筛选并查看最佳匹配</div>
+        </a>
+    </div>
+    {% else %}
+    <p style="text-align: center; color: #666; margin: 20px 0;">您还没有填写需求信息</p>
+    <div class="btn-group">
+        <a href="{{ url_for('student_info') }}" class="btn">添加信息</a>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>上传头像 (jpg, ≤2MB)</label>
+            <input type="file" name="avatar" accept=".jpg,.jpeg,.png">
+        </div>
+        <div class="form-group">
+            <label>性别 *</label>
+            <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="gender" value="男" {% if student_info and student_info.gender=='男' %}checked{% endif %}> 男</label>
+                <label class="radio-item"><input type="radio" name="gender" value="女" {% if student_info and student_info.gender=='女' %}checked{% endif %}> 女</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" name="accept_opposite_gender" {% if student_info and student_info.accept_opposite_gender %}checked{% endif %}> 接受异性授课对象</label>
+        </div>
+        <div class="form-group">
+            <label>科目 * (至少选择1科)</label>
+            <div class="checkbox-group">
+                {% for subject in subjects %}
+                <label class="checkbox-item"><input type="checkbox" name="subjects" value="{{ subject }}" {% if student_info and subject in student_info.subjects %}checked{% endif %}> {{ subject }}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>年级 * (单选)</label>
+            <div class="radio-group">
+                {% for grade in grades %}
+                <label class="radio-item"><input type="radio" name="grade" value="{{ grade }}" {% if student_info and student_info.grade==grade %}checked{% endif %}> {{ grade }}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>授课方式 * (至少选择1种)</label>
+            <div class="checkbox-group">
+                {% for mode in teaching_modes %}
+                <label class="checkbox-item"><input type="checkbox" name="teaching_mode" value="{{ mode }}" {% if student_info and mode in student_info.teaching_mode %}checked{% endif %}> {{ mode }}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>预算上限 (元/小时，无限制则留空)</label>
+            <input type="number" name="budget_upper" value="{{ student_info.budget_upper if student_info else '' }}">
+        </div>
+        <div class="form-group">
+            <label>上课时间 (可多选，每天一个时间段)</label>
+            {% for day in weekdays %}
+            <div class="time-slot">
+                <input type="checkbox" name="time_enabled_{{ day }}" value="1" {% if teaching_time and day in teaching_time %}checked{% endif %}>
+                <span>{{ day }}</span>
+                <input type="time" name="time_start_{{ day }}" class="time-input" value="{{ teaching_time[day].start if teaching_time and day in teaching_time else '' }}">
+                <span>-</span>
+                <input type="time" name="time_end_{{ day }}" class="time-input" value="{{ teaching_time[day].end if teaching_time and day in teaching_time else '' }}">
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            <label>补充要求 (50字以内，非必填)</label>
+            <input type="text" name="requirements" value="{{ student_info.requirements if student_info else '' }}" maxlength="50">
+        </div>
+        <div class="form-group">
+            <label>微信号 (非必填)</label>
+            <input type="text" name="wechat" value="{{ student_info.wechat if student_info else '' }}">
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('student_home') }}" class="btn btn-secondary">返回</a>
+            <button type="submit" class="btn">保存</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

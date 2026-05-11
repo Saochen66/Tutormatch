@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}收到评价{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 20px auto;">
+    <div class="card-header">
+        <h2>收到评价</h2>
+    </div>
+
+    <div class="card-body">
+        <!-- 平均评分 -->
+        <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-radius: 12px;">
+            <div style="font-size: 48px; color: #FACC15; margin-bottom: 10px;">
+                {% if avg_rating %}
+                    {{ avg_rating|round(1) }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div style="margin-bottom: 10px;">
+                {% if avg_rating %}
+                    {% set avg = avg_rating|round(1) %}
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg|int %}
+                            <span style="color: #FACC15; font-size: 32px;">★</span>
+                        {% elif i - 0.5 <= avg %}
+                            <span style="color: #FACC15; font-size: 32px;">★</span>
+                        {% else %}
+                            <span style="color: #D1D5DB; font-size: 32px;">☆</span>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div style="color: #92400E; font-size: 14px;">
+                {% if reviews|length > 0 %}
+                    共收到 {{ reviews|length }} 条评价
+                {% else %}
+                    暂无评价
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 评价列表 -->
+        {% if reviews %}
+            {% for review in reviews %}
+                <div style="padding: 20px; border-bottom: 1px solid #E5E7EB; {% if loop.last %}border-bottom: none;{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center;">
+                            {% if review.student.avatar_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + review.student.avatar_path) }}"
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
+                            {% else %}
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #4F46E5; display: flex; align-items: center; justify-content: center; color: white; margin-right: 10px; font-size: 14px;">
+                                    {{ review.student.nickname[0] }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight: bold; color: #1F2937;">{{ review.student.nickname }}</div>
+                                <div style="color: #9CA3AF; font-size: 12px;">
+                                    {{ review.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            {% for i in range(1, 6) %}
+                                {% if i <= review.rating %}
+                                    <span style="color: #FACC15; font-size: 18px;">★</span>
+                                {% else %}
+                                    <span style="color: #D1D5DB; font-size: 18px;">☆</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if review.comment %}
+                        <p style="color: #374151; margin: 10px 0; line-height: 1.6; padding: 10px 15px; background: #F9FAFB; border-radius: 8px; border-left: 3px solid #4F46E5;">
+                            {{ review.comment }}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 60px 20px; color: #9CA3AF;">
+                <div style="font-size: 64px; margin-bottom: 15px;">⭐</div>
+                <p style="font-size: 16px;">暂无评价</p>
+                <p style="font-size: 14px; margin-top: 8px;">完善您的家教信息，等待学生来评价吧！</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

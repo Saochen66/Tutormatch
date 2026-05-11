@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}首页 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card hero">
+    <div class="hero-icon">📚</div>
+    <h1>家教服务系统</h1>
+    <p class="subtitle">连接优秀家教与需要帮助的学生</p>
+</div>
+
+<div class="grid-2">
+    <a href="{{ url_for('register') }}?role=tutor" class="menu-card tutor">
+        <div class="menu-icon">👨‍🏫</div>
+        <div class="menu-title">我是家教</div>
+        <div class="menu-desc">发布授课信息，寻找生源</div>
+    </a>
+    <a href="{{ url_for('register') }}?role=student" class="menu-card student">
+        <div class="menu-icon">🎓</div>
+        <div class="menu-title">我是学生/家长</div>
+        <div class="menu-desc">发布需求，寻找合适家教</div>
+    </a>
+</div>
+
+<div style="text-align: center; margin-top: 24px;">
+    <a href="{{ url_for('admin_login') }}" class="link" style="font-size: 13px; color: var(--gray-500);">管理员入口</a>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}我的评价{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 20px auto;">
+    <div class="card-header">
+        <h2>我的评价</h2>
+    </div>
+
+    <div class="card-body">
+        {% if reviews %}
+            {% for review in reviews %}
+                <div style="padding: 20px; border-bottom: 1px solid #E5E7EB; {% if loop.last %}border-bottom: none;{% endif %}">
+                    <!-- 家教信息 -->
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        {% if review.tutor.avatar_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + review.tutor.avatar_path) }}"
+                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 12px;">
+                        {% else %}
+                            <img src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22><circle cx=%2225%22 cy=%2225%22 r=%2225%22 fill=%22%234F46E5%22/><text x=%2225%22 y=%2230%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2216%22>👨‍🏫</text></svg>"
+                                 style="width: 50px; height: 50px; border-radius: 50%; margin-right: 12px;">
+                        {% endif %}
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; color: #1F2937;">{{ review.tutor.user.nickname }}</div>
+                            <div style="color: #6B7280; font-size: 13px;">
+                                {{ review.tutor.subjects.replace(',', '、') }}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            {% for i in range(1, 6) %}
+                                {% if i <= review.rating %}
+                                    <span style="color: #FACC15; font-size: 20px;">★</span>
+                                {% else %}
+                                    <span style="color: #D1D5DB; font-size: 20px;">☆</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- 评价内容 -->
+                    {% if review.comment %}
+                        <p style="color: #374151; margin: 10px 0; line-height: 1.6; padding: 10px; background: #F9FAFB; border-radius: 6px;">
+                            {{ review.comment }}
+                        </p>
+                    {% endif %}
+
+                    <!-- 时间和操作 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span style="color: #9CA3AF; font-size: 12px;">
+                            评价于 {{ review.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% if review.updated_at != review.created_at %}
+                                (修改于 {{ review.updated_at.strftime('%Y-%m-%d %H:%M') }})
+                            {% endif %}
+                        </span>
+                        <div style="display: flex; gap: 10px;">
+                            <a href="{{ url_for('display_add_review', tutor_id=review.tutor.id) }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">
+                                ✎ 修改
+                            </a>
+                            <button onclick="deleteReview({{ review.id }})" class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;">
+                                🗑 撤回
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 60px 20px; color: #9CA3AF;">
+                <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
+                <p style="font-size: 16px;">您还没有评价过任何家教</p>
+                <a href="{{ url_for('search_tutors') }}" class="btn btn-primary" style="margin-top: 15px;">
+                    去查找家教
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function deleteReview(reviewId) {
+    if (!confirm('确定要撤回这条评价吗？')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/reviews/${reviewId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('撤回成功');
+            location.reload();
+        } else {
+            alert(data.error || '操作失败');
+        }
+    } catch (error) {
+        alert('网络错误，请重试');
+    }
+}
+</script>
+{% endblock %}

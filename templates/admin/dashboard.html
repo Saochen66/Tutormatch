@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}管理员后台 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>管理员后台</h1>
+    <p class="subtitle">用户管理</p>
+</div>
+
+<div class="card">
+    <div class="section-title">用户列表 ({{ users|length }})</div>
+    <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('admin_dashboard', sort='created_at') }}" class="btn btn-sm {% if sort == 'created_at' %}{% else %}btn-secondary{% endif %}">按注册时间</a>
+        <a href="{{ url_for('admin_dashboard', sort='nickname') }}" class="btn btn-sm {% if sort == 'nickname' %}{% else %}btn-secondary{% endif %}">按昵称</a>
+        <a href="{{ url_for('admin_dashboard', sort='role') }}" class="btn btn-sm {% if sort == 'role' %}{% else %}btn-secondary{% endif %}">按身份类型</a>
+    </div>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>昵称</th>
+                    <th>注册时间</th>
+                    <th>身份类型</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td style="font-weight: 600;">{{ user.nickname }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
+                    <td>
+                        {% if user.role == 'tutor' %}
+                        <span class="badge badge-primary">家教</span>
+                        {% else %}
+                        <span class="badge badge-success">学生家长</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button onclick="showPasswordForm({{ user.id }})" class="btn btn-sm btn-secondary">修改密码</button>
+                        <div id="password_form_{{ user.id }}" style="display: none; margin-top: 10px;">
+                            <form method="POST" action="{{ url_for('admin_change_password', user_id=user.id) }}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <input type="password" name="new_password" placeholder="新密码(≥8位)" required style="flex: 1; min-width: 120px;">
+                                <button type="submit" class="btn btn-sm">确认</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="btn-group">
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">退出登录</a>
+    <a href="{{ url_for('index') }}" class="btn">返回首页</a>
+</div>
+
+<script>
+function showPasswordForm(userId) {
+    var form = document.getElementById('password_form_' + userId);
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

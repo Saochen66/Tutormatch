@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}我的 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>我的</h1>
+    <p class="subtitle">账户与需求管理</p>
+</div>
+
+<div class="card">
+    <div class="grid-2">
+        {% if current_user.role == 'tutor' %}
+        <a href="{{ url_for('tutor_info') }}" class="menu-card tutor">
+            <div class="menu-icon">✍️</div>
+            <div class="menu-title">修改信息</div>
+            <div class="menu-desc">更新授课资料</div>
+        </a>
+        <a href="{{ url_for('received_reviews') }}" class="menu-card student">
+            <div class="menu-icon">⭐</div>
+            <div class="menu-title">收到评价</div>
+            <div class="menu-desc">查看学生评价</div>
+        </a>
+        {% else %}
+        <a href="{{ url_for('student_info') }}" class="menu-card tutor">
+            <div class="menu-icon">✍️</div>
+            <div class="menu-title">修改信息</div>
+            <div class="menu-desc">更新需求资料</div>
+        </a>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('withdraw_listing') }}" onsubmit="return confirm('{% if profile and profile.listing_active == False %}确认重新发布需求？{% else %}确认撤回需求？撤回后他人和AI助手都看不到您的信息。{% endif %}');" style="margin: 0;">
+            <button type="submit" class="menu-card student" style="width: 100%; border: none; cursor: pointer; text-align: center;">
+            <div class="menu-icon">🧯</div>
+            <div class="menu-title">{% if profile and profile.listing_active == False %}重新发布需求{% else %}撤回需求{% endif %}</div>
+            <div class="menu-desc">{% if profile and profile.listing_active == False %}恢复在筛选与AI统计中的可见性{% else %}保留资料但暂停展示{% endif %}</div>
+            </button>
+        </form>
+
+        <a href="{{ url_for('tutor_my_favorites') if current_user.role == 'tutor' else url_for('student_my_favorites') }}" class="menu-card admin">
+            <div class="menu-icon">⭐</div>
+            <div class="menu-title">我的收藏</div>
+            <div class="menu-desc">管理收藏对象</div>
+        </a>
+
+        {% if current_user.role == 'student' %}
+        <a href="{{ url_for('my_reviews') }}" class="menu-card tutor">
+            <div class="menu-icon">📝</div>
+            <div class="menu-title">我的评价</div>
+            <div class="menu-desc">查看、修改或撤回评价</div>
+        </a>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('deactivate') }}" onsubmit="return confirm('确定要注销账号吗？');" class="menu-card" style="border: none; cursor: pointer; text-align: center; background: #FEF2F2;">
+            <div class="menu-icon" style="background: linear-gradient(135deg, #EF4444, #DC2626);">🗑️</div>
+            <div class="menu-title" style="color: #B91C1C;">注销账号</div>
+            <div class="menu-desc">停用当前账号</div>
+        </form>
+    </div>
+</div>
+
+<div class="btn-group">
+    {% if current_user.role == 'tutor' %}
+    <a href="{{ url_for('tutor_home') }}" class="btn btn-secondary">返回主页</a>
+    <a href="{{ url_for(query_endpoint) }}" class="btn">查询生源</a>
+    {% else %}
+    <a href="{{ url_for('student_home') }}" class="btn btn-secondary">返回主页</a>
+    <a href="{{ url_for(query_endpoint) }}" class="btn">查询家教</a>
+    {% endif %}
+</div>
+{% endblock %}

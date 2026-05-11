@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}评价 - {{ tutor.user.nickname }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 20px auto;">
+    <div class="card-header">
+        <h2>{{ tutor.user.nickname }} 的评价</h2>
+        <a href="{{ url_for('tutor_detail', tutor_id=tutor.id) }}" class="btn btn-secondary" style="float: right;">返回详情</a>
+    </div>
+
+    <div class="card-body">
+        <!-- 平均评分 -->
+        <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: #FEF3C7; border-radius: 8px;">
+            <h3 style="margin: 0; color: #92400E;">
+                平均评分：
+                {% if avg_rating %}
+                    {% set avg = avg_rating|round(1) %}
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg|int %}
+                            <span style="color: #FACC15; font-size: 28px;">★</span>
+                        {% elif i - 0.5 <= avg %}
+                            <span style="color: #FACC15; font-size: 28px;">★</span>
+                        {% else %}
+                            <span style="color: #D1D5DB; font-size: 28px;">☆</span>
+                        {% endif %}
+                    {% endfor %}
+                    <span style="font-size: 24px; margin-left: 10px;">{{ avg_rating|round(1) }} 星</span>
+                {% else %}
+                    <span style="color: #6B7280; font-size: 18px;">暂无评价</span>
+                {% endif %}
+            </h3>
+        </div>
+
+        <!-- 我要评价按钮 -->
+        {% if current_user.is_authenticated and current_user.role == 'student' %}
+            {% if user_review %}
+                <a href="{{ url_for('display_add_review', tutor_id=tutor.id) }}" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">
+                    ✎ 修改我的评价
+                </a>
+            {% else %}
+                <a href="{{ url_for('display_add_review', tutor_id=tutor.id) }}" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">
+                    ★ 我要评价
+                </a>
+            {% endif %}
+        {% elif not current_user.is_authenticated %}
+            <div style="text-align: center; padding: 10px; color: #6B7280; margin-bottom: 20px;">
+                请先 <a href="{{ url_for('login') }}">登录</a> 后评价
+            </div>
+        {% endif %}
+
+        <!-- 评价列表（带滚动条） -->
+        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 8px; padding: 10px;">
+            {% if reviews %}
+                {% for review in reviews %}
+                    <div style="padding: 15px; border-bottom: 1px solid #F3F4F6; {% if loop.last %}border-bottom: none;{% endif %}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color: #4F46E5;">{{ review.student.nickname }}</strong>
+                                <span style="color: #9CA3AF; font-size: 12px; margin-left: 10px;">
+                                    {{ review.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </span>
+                            </div>
+                            <div>
+                                {% for i in range(1, 6) %}
+                                    {% if i <= review.rating %}
+                                        <span style="color: #FACC15; font-size: 18px;">★</span>
+                                    {% else %}
+                                        <span style="color: #D1D5DB; font-size: 18px;">☆</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if review.comment %}
+                            <p style="color: #374151; margin: 5px 0; line-height: 1.6;">{{ review.comment }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 40px; color: #9CA3AF;">
+                    暂无评价，快来抢沙发吧！
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

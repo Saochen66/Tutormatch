@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}需求详情 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>需求详情</h1>
+</div>
+
+<div class="card">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <img src="{{ url_for('static', filename='uploads/' + student.avatar_path) if student.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%2210B981%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2240%22>🎓</text></svg>' }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: var(--shadow-lg);" alt="头像">
+    </div>
+    
+    <div class="info-row">
+        <span class="info-label">昵称</span>
+        <span class="info-value" style="font-weight: 600;">{{ student.user.nickname }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">性别</span>
+        <span class="info-value"><span class="badge badge-primary">{{ student.gender }}</span></span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">科目</span>
+        <span class="info-value">
+            {% for s in student.subjects.split(',') %}
+            <span class="tag tag-success">{{ s }}</span>
+            {% endfor %}
+        </span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">年级</span>
+        <span class="info-value"><span class="badge badge-success">{{ student.grade }}</span></span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">授课方式</span>
+        <span class="info-value">{{ student.teaching_mode }}</span>
+    </div>
+    {% if student.budget_upper %}
+    <div class="info-row">
+        <span class="info-label">预算上限</span>
+        <span class="info-value" style="font-size: 18px; font-weight: 700; color: var(--secondary);">{{ student.budget_upper }} 元/小时</span>
+    </div>
+    {% endif %}
+    
+    {% if student_teaching_time %}
+    <div class="info-row" style="flex-direction: column; gap: 8px;">
+        <span class="info-label" style="width: auto;">上课时间</span>
+        <span class="info-value">
+            {% for day, time in student_teaching_time.items() %}
+            <span class="tag tag-warning">{{ day }} {{ time.start }}-{{ time.end }}</span>
+            {% endfor %}
+        </span>
+    </div>
+    {% endif %}
+    
+    {% if student.requirements %}
+    <div class="info-row">
+        <span class="info-label">补充要求</span>
+        <span class="info-value">{{ student.requirements }}</span>
+    </div>
+    {% endif %}
+    
+    {% if student.wechat %}
+    <div class="info-row">
+        <span class="info-label">微信号</span>
+        <span class="info-value" style="font-weight: 600; color: var(--secondary);">{{ student.wechat }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="btn-group">
+    <a href="{{ url_for('search_students') }}" class="btn btn-secondary">返回列表</a>
+</div>
+{% endblock %}

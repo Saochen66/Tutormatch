@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}修改评价{% else %}我要评价{% endif %} - {{ tutor.user.nickname }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 20px auto;">
+    <div class="card-header">
+        <h2>{% if is_edit %}修改评价{% else %}我要评价{% endif %}</h2>
+    </div>
+
+    <div class="card-body">
+        <!-- 家教信息 -->
+        <div style="display: flex; align-items: center; margin-bottom: 25px; padding: 15px; background: #F9FAFB; border-radius: 8px;">
+            {% if tutor.avatar_path %}
+                <img src="{{ url_for('static', filename='uploads/' + tutor.avatar_path) }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 15px;">
+            {% else %}
+                <img src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%234F46E5%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2218%22>👨‍🏫</text></svg>" style="width: 60px; height: 60px; border-radius: 50%; margin-right: 15px;">
+            {% endif %}
+            <div>
+                <div style="font-weight: bold; font-size: 18px; color: #1F2937;">{{ tutor.user.nickname }}</div>
+                <div style="color: #6B7280; font-size: 14px;">
+                    {{ tutor.subjects.replace(',', '、') }} | {{ tutor.fee }}元/小时
+                </div>
+            </div>
+        </div>
+
+        <!-- 评分星星 -->
+        <div style="text-align: center; margin-bottom: 30px;">
+            <label style="display: block; margin-bottom: 15px; font-weight: bold; color: #374151;">请选择评分</label>
+            <div id="star-rating" style="font-size: 48px; cursor: pointer;">
+                <span class="star" data-rating="1" style="color: #D1D5DB; margin: 0 5px;">☆</span>
+                <span class="star" data-rating="2" style="color: #D1D5DB; margin: 0 5px;">☆</span>
+                <span class="star" data-rating="3" style="color: #D1D5DB; margin: 0 5px;">☆</span>
+                <span class="star" data-rating="4" style="color: #D1D5DB; margin: 0 5px;">☆</span>
+                <span class="star" data-rating="5" style="color: #D1D5DB; margin: 0 5px;">☆</span>
+            </div>
+            <div id="rating-text" style="margin-top: 10px; color: #6B7280; font-size: 14px;">点击星星进行评分</div>
+        </div>
+
+        <!-- 评价内容 -->
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #374151;">
+                评价内容 <span style="font-weight: normal; color: #9CA3AF;">(可选，最多100字)</span>
+            </label>
+            <textarea id="comment" rows="4" maxlength="100" style="width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 6px; resize: vertical; font-family: inherit;"
+                      placeholder="分享您对这位家教的评价...">{{ review.comment if review else '' }}</textarea>
+            <div style="text-align: right; margin-top: 5px; color: #9CA3AF; font-size: 12px;">
+                <span id="char-count">{{ review.comment|length if review else 0 }}</span>/100
+            </div>
+        </div>
+
+        <!-- 按钮 -->
+        <div style="display: flex; gap: 10px;">
+            <button onclick="submitReview()" class="btn btn-primary" style="flex: 1; font-size: 16px; padding: 12px;">
+                {% if is_edit %}✎ 修改评价{% else %}★ 提交评价{% endif %}
+            </button>
+            <a href="{{ url_for('tutor_reviews', tutor_id=tutor.id) }}" class="btn btn-secondary" style="flex: 1; text-align: center;">
+                取消
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRating = {{ review.rating if review else 0 }};
+
+// 初始化星星显示
+function updateStars(rating) {
+    const stars = document.querySelectorAll('.star');
+    stars.forEach(star => {
+        const starRating = parseInt(star.dataset.rating);
+        if (starRating <= rating) {
+            star.textContent = '★';
+            star.style.color = '#FACC15';
+        } else {
+            star.textContent = '☆';
+            star.style.color = '#D1D5DB';
+        }
+    });
+
+    const ratingTexts = ['', '很差', '较差', '一般', '不错', '非常好'];
+    document.getElementById('rating-text').textContent = rating > 0 ? `您选择了 ${rating} 星 - ${ratingTexts[rating]}` : '点击星星进行评分';
+}
+
+// 点击星星
+document.querySelectorAll('.star').forEach(star => {
+    star.addEventListener('click', function() {
+        currentRating = parseInt(this.dataset.rating);
+        updateStars(currentRating);
+    });
+
+    star.addEventListener('mouseenter', function() {
+        const hoverRating = parseInt(this.dataset.rating);
+        updateStars(hoverRating);
+    });
+});
+
+document.getElementById('star-rating').addEventListener('mouseleave', function() {
+    updateStars(currentRating);
+});
+
+// 字符计数
+document.getElementById('comment').addEventListener('input', function() {
+    document.getElementById('char-count').textContent = this.value.length;
+});
+
+// 提交评价
+async function submitReview() {
+    if (currentRating === 0) {
+        alert('请选择评分');
+        return;
+    }
+
+    const comment = document.getElementById('comment').value.trim();
+
+    try {
+        let response;
+        {% if is_edit %}
+            response = await fetch('/api/reviews/{{ review.id }}/edit', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating: currentRating, comment: comment })
+            });
+        {% else %}
+            response = await fetch('/api/reviews/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tutor_id: {{ tutor.id }}, rating: currentRating, comment: comment })
+            });
+        {% endif %}
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('{% if is_edit %}修改{% else %}评价{% endif %}成功！');
+            window.location.href = '{{ url_for("tutor_reviews", tutor_id=tutor.id) }}';
+        } else {
+            alert(data.error || '操作失败');
+        }
+    } catch (error) {
+        alert('网络错误，请重试');
+    }
+}
+
+// 初始化
+updateStars(currentRating);
+</script>
+{% endblock %}

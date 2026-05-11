@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}我的收藏 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>我的收藏</h1>
+    <p class="subtitle">点击星标可取消收藏</p>
+</div>
+
+<div class="card">
+    {% if target_role == 'tutor' %}
+    <div class="section-title">已收藏家教 ({{ tutors|length }})</div>
+    {% if tutors %}
+        {% for tutor in tutors %}
+        <div class="list-item">
+            <div class="list-item-header">
+                <img src="{{ url_for('static', filename='uploads/' + tutor.avatar_path) if tutor.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%234F46E5%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22>👨‍🏫</text></svg>' }}" class="avatar" alt="头像">
+                <div class="list-item-info">
+                    <div class="list-item-name">{{ tutor.user.nickname }}</div>
+                    <div class="list-item-meta">
+                        <span class="badge badge-primary">{{ tutor.gender }}</span>
+                        <span>{{ tutor.teaching_mode }}</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--primary);">{{ tutor.fee }}元</div>
+                    <div style="font-size: 12px; color: var(--gray-500);">/小时</div>
+                </div>
+            </div>
+            <div style="margin-top: 8px;"><span class="tag">{{ tutor.subjects }}</span></div>
+            <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="favorite-btn" data-target-role="tutor" data-target-id="{{ tutor.id }}" style="border: none; background: transparent; cursor: pointer; font-size: 24px; color: #FACC15;">★</button>
+                <a href="{{ url_for('tutor_detail', tutor_id=tutor.id) }}" class="btn btn-sm">查看详情</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">⭐</div><p>还没有收藏家教</p></div>
+    {% endif %}
+    {% else %}
+    <div class="section-title">已收藏生源 ({{ students|length }})</div>
+    {% if students %}
+        {% for student in students %}
+        <div class="list-item">
+            <div class="list-item-header">
+                <img src="{{ url_for('static', filename='uploads/' + student.avatar_path) if student.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%2210B981%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22>🎓</text></svg>' }}" class="avatar" alt="头像">
+                <div class="list-item-info">
+                    <div class="list-item-name">{{ student.user.nickname }}</div>
+                    <div class="list-item-meta">
+                        <span class="badge badge-success">{{ student.grade }}</span>
+                        <span>{{ student.teaching_mode }}</span>
+                    </div>
+                </div>
+                {% if student.budget_upper %}
+                <div style="text-align: right;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--secondary);">{{ student.budget_upper }}元</div>
+                    <div style="font-size: 12px; color: var(--gray-500);">预算上限/小时</div>
+                </div>
+                {% endif %}
+            </div>
+            <div style="margin-top: 8px;"><span class="tag tag-success">{{ student.subjects }}</span></div>
+            <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="favorite-btn" data-target-role="student" data-target-id="{{ student.id }}" style="border: none; background: transparent; cursor: pointer; font-size: 24px; color: #FACC15;">★</button>
+                <a href="{{ url_for('student_detail', student_id=student.id) }}" class="btn btn-sm">查看详情</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">⭐</div><p>还没有收藏生源</p></div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<div class="btn-group">
+    <a href="{{ url_for('tutor_my_center') if current_user.role == 'tutor' else url_for('student_my_center') }}" class="btn btn-secondary">返回我的</a>
+</div>
+
+<script>
+    async function toggleFavorite(buttonEl) {
+        const targetRole = buttonEl.dataset.targetRole;
+        const targetId = Number(buttonEl.dataset.targetId);
+        const response = await fetch('/favorite/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_role: targetRole, target_profile_id: targetId })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            alert(data.error || '操作失败');
+            return;
+        }
+        if (!data.favorited) {
+            buttonEl.closest('.list-item').remove();
+        }
+    }
+
+    document.querySelectorAll('.favorite-btn').forEach((buttonEl) => {
+        buttonEl.addEventListener('click', () => {
+            toggleFavorite(buttonEl);
+        });
+    });
+</script>
+{% endblock %}

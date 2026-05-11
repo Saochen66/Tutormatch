@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}搜寻家教 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>搜寻家教</h1>
+    <p class="subtitle">找到最适合您的老师</p>
+</div>
+
+<div class="card">
+    <div class="section-title">筛选条件</div>
+    <form method="GET">
+        <div class="form-group">
+            <label>排序方式</label>
+            <select name="sort">
+                <option value="newest" {% if sort=='newest' %}selected{% endif %}>最新发布</option>
+                <option value="lowest_fee" {% if sort=='lowest_fee' %}selected{% endif %}>费用从低到高</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>授课方式</label>
+            <div class="checkbox-group">
+                {% for mode in teaching_modes %}
+                <label class="checkbox-item">
+                    <input type="checkbox" name="teaching_mode" value="{{ mode }}" {% if mode in teaching_mode_filter %}checked{% endif %}>
+                    {{ mode }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>预算范围 (元/小时)</label>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="number" name="fee_min" placeholder="最低" value="{{ fee_min }}" style="flex: 1;">
+                <span style="color: var(--gray-400);">-</span>
+                <input type="number" name="fee_max" placeholder="最高" value="{{ fee_max }}" style="flex: 1;">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-block">应用筛选</button>
+    </form>
+</div>
+
+{% if best_match %}
+<div class="card" style="border: 2px solid #FACC15; background: linear-gradient(120deg, #FEFCE8, #E0F2FE);">
+    <div class="section-title" style="display: flex; align-items: center; justify-content: space-between; border-color: #FACC15;">
+        <span>最佳匹配推荐</span>
+        <span class="badge badge-warning">匹配度 {{ best_score }}%</span>
+    </div>
+    <div class="list-item" style="background: white; margin-bottom: 8px;">
+        <div class="list-item-header">
+            <img src="{{ url_for('static', filename='uploads/' + best_match.avatar_path) if best_match.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%234F46E5%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22>👨‍🏫</text></svg>' }}" class="avatar" alt="头像">
+            <div class="list-item-info">
+                <div class="list-item-name">{{ best_match.user.nickname }}</div>
+                <div class="list-item-meta">
+                    <span class="badge badge-primary">{{ best_match.gender }}</span>
+                    <span>{{ best_match.teaching_mode }}</span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--primary);">{{ best_match.fee }}元</div>
+                <div style="font-size: 12px; color: var(--gray-500);">/小时</div>
+            </div>
+        </div>
+        <div style="margin-top: 8px;">
+            <span class="tag">{{ best_match.subjects }}</span>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="favorite-btn" data-target-role="tutor" data-target-id="{{ best_match.id }}" style="border: none; background: transparent; cursor: pointer; font-size: 24px; color: #FACC15;">{% if best_match.id in favorite_ids %}★{% else %}☆{% endif %}</button>
+            <a href="{{ url_for('tutor_detail', tutor_id=best_match.id) }}" class="btn btn-sm">查看详情</a>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 5px;">
+                {% set rating_info = tutor_ratings.get(best_match.id) %}
+                {% if rating_info and rating_info.avg %}
+                    <span style="color: #FACC15; font-size: 18px;">
+                        {% for i in range(1, 6) %}
+                            {% if i <= rating_info.avg|int %}
+                                ★
+                            {% elif i - 0.5 <= rating_info.avg %}
+                                ★
+                            {% else %}
+                                ☆
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                    <span style="font-size: 14px; color: #6B7280;">{{ rating_info.avg }}星 ({{ rating_info.count }})</span>
+                {% else %}
+                    <span style="font-size: 12px; color: #9CA3AF;">暂时无评价</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div style="font-size: 13px; color: var(--gray-700);">推荐理由：{{ best_explanation }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="section-title">家教列表 ({{ tutors|length }})</div>
+    {% if tutors %}
+        {% for tutor in tutors %}
+        <div class="list-item">
+            <div class="list-item-header">
+                <img src="{{ url_for('static', filename='uploads/' + tutor.avatar_path) if tutor.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%234F46E5%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22>👨‍🏫</text></svg>' }}" class="avatar" alt="头像">
+                <div class="list-item-info">
+                    <div class="list-item-name">{{ tutor.user.nickname }}</div>
+                    <div class="list-item-meta">
+                        <span class="badge badge-primary">{{ tutor.gender }}</span>
+                        <span>{{ tutor.teaching_mode }}</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--primary);">{{ tutor.fee }}元</div>
+                    <div style="font-size: 12px; color: var(--gray-500);">/小时</div>
+                </div>
+            </div>
+            <div style="margin-top: 8px;">
+                <span class="tag">{{ tutor.subjects }}</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="favorite-btn" data-target-role="tutor" data-target-id="{{ tutor.id }}" style="border: none; background: transparent; cursor: pointer; font-size: 24px; color: #FACC15;">{% if tutor.id in favorite_ids %}★{% else %}☆{% endif %}</button>
+                <a href="{{ url_for('tutor_detail', tutor_id=tutor.id) }}" class="btn btn-sm">查看详情</a>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 5px;">
+                    {% set rating_info = tutor_ratings.get(tutor.id) %}
+                    {% if rating_info and rating_info.avg %}
+                        <span style="color: #FACC15; font-size: 16px;">
+                            {% for i in range(1, 6) %}
+                                {% if i <= rating_info.avg|int %}
+                                    ★
+                                {% elif i - 0.5 <= rating_info.avg %}
+                                    ★
+                                {% else %}
+                                    ☆
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                        <span style="font-size: 12px; color: #6B7280;">{{ rating_info.avg }}星</span>
+                    {% else %}
+                        <span style="font-size: 12px; color: #9CA3AF;">暂时无评价</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <p>暂无符合条件的家教</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="btn-group">
+    <a href="{{ url_for('student_home') }}" class="btn btn-secondary">返回主页</a>
+</div>
+
+<script>
+    function updateFavoriteButtons(targetRole, targetId, favorited) {
+        const selector = `.favorite-btn[data-target-role="${targetRole}"][data-target-id="${targetId}"]`;
+        document.querySelectorAll(selector).forEach((btn) => {
+            btn.textContent = favorited ? '★' : '☆';
+        });
+    }
+
+    async function toggleFavorite(buttonEl) {
+        const targetRole = buttonEl.dataset.targetRole;
+        const targetId = Number(buttonEl.dataset.targetId);
+        const response = await fetch('/favorite/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_role: targetRole, target_profile_id: targetId })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            alert(data.error || '操作失败');
+            return;
+        }
+        updateFavoriteButtons(targetRole, targetId, data.favorited);
+    }
+
+    document.querySelectorAll('.favorite-btn').forEach((buttonEl) => {
+        buttonEl.addEventListener('click', () => {
+            toggleFavorite(buttonEl);
+        });
+    });
+</script>
+{% endblock %}

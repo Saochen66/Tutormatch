@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}搜寻生源 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>搜寻生源</h1>
+    <p class="subtitle">找到需要家教的学生</p>
+</div>
+
+<div class="card">
+    <div class="section-title">筛选条件</div>
+    <form method="GET">
+        <div class="form-group">
+            <label>排序方式</label>
+            <select name="sort">
+                <option value="newest" {% if sort=='newest' %}selected{% endif %}>最新发布</option>
+                <option value="highest_budget" {% if sort=='highest_budget' %}selected{% endif %}>预算从高到低</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>年级</label>
+            <div class="checkbox-group">
+                {% for grade in grades[:6] %}
+                <label class="checkbox-item">
+                    <input type="checkbox" name="grade" value="{{ grade }}" {% if grade in grade_filter %}checked{% endif %}>
+                    {{ grade }}
+                </label>
+                {% endfor %}
+            </div>
+            <div class="checkbox-group" style="margin-top: 8px;">
+                {% for grade in grades[6:] %}
+                <label class="checkbox-item">
+                    <input type="checkbox" name="grade" value="{{ grade }}" {% if grade in grade_filter %}checked{% endif %}>
+                    {{ grade }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>授课方式</label>
+            <div class="checkbox-group">
+                {% for mode in teaching_modes %}
+                <label class="checkbox-item">
+                    <input type="checkbox" name="teaching_mode" value="{{ mode }}" {% if mode in teaching_mode_filter %}checked{% endif %}>
+                    {{ mode }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>预算范围 (元/小时)</label>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="number" name="budget_min" placeholder="最低" value="{{ budget_min }}" style="flex: 1;">
+                <span style="color: var(--gray-400);">-</span>
+                <input type="number" name="budget_max" placeholder="最高" value="{{ budget_max }}" style="flex: 1;">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-block">应用筛选</button>
+    </form>
+</div>
+
+{% if best_match %}
+<div class="card" style="border: 2px solid #FACC15; background: linear-gradient(120deg, #FFF7ED, #ECFEFF);">
+    <div class="section-title" style="display: flex; align-items: center; justify-content: space-between; border-color: #FACC15;">
+        <span>最佳匹配推荐</span>
+        <span class="badge badge-warning">匹配度 {{ best_score }}%</span>
+    </div>
+    <div class="list-item" style="background: white; margin-bottom: 8px;">
+        <div class="list-item-header">
+            <img src="{{ url_for('static', filename='uploads/' + best_match.avatar_path) if best_match.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%2210B981%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22>🎓</text></svg>' }}" class="avatar" alt="头像">
+            <div class="list-item-info">
+                <div class="list-item-name">{{ best_match.user.nickname }}</div>
+                <div class="list-item-meta">
+                    <span class="badge badge-success">{{ best_match.grade }}</span>
+                    <span>{{ best_match.teaching_mode }}</span>
+                </div>
+            </div>
+            {% if best_match.budget_upper %}
+            <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--secondary);">{{ best_match.budget_upper }}元</div>
+                <div style="font-size: 12px; color: var(--gray-500);">预算上限/小时</div>
+            </div>
+            {% endif %}
+        </div>
+        <div style="margin-top: 8px;">
+            <span class="tag tag-success">{{ best_match.subjects }}</span>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="favorite-btn" data-target-role="student" data-target-id="{{ best_match.id }}" style="border: none; background: transparent; cursor: pointer; font-size: 24px; color: #FACC15;">{% if best_match.id in favorite_ids %}★{% else %}☆{% endif %}</button>
+            <a href="{{ url_for('student_detail', student_id=best_match.id) }}" class="btn btn-sm">查看详情</a>
+        </div>
+    </div>
+    <div style="font-size: 13px; color: var(--gray-700);">推荐理由：{{ best_explanation }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="section-title">学生/家长需求 ({{ students|length }})</div>
+    {% if students %}
+        {% for student in students %}
+        <div class="list-item">
+            <div class="list-item-header">
+                <img src="{{ url_for('static', filename='uploads/' + student.avatar_path) if student.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%2210B981%22/><text x=%2230%22 y=%2235%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22>🎓</text></svg>' }}" class="avatar" alt="头像">
+                <div class="list-item-info">
+                    <div class="list-item-name">{{ student.user.nickname }}</div>
+                    <div class="list-item-meta">
+                        <span class="badge badge-success">{{ student.grade }}</span>
+                        <span>{{ student.teaching_mode }}</span>
+                    </div>
+                </div>
+                {% if student.budget_upper %}
+                <div style="text-align: right;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--secondary);">{{ student.budget_upper }}元</div>
+                    <div style="font-size: 12px; color: var(--gray-500);">预算上限/小时</div>
+                </div>
+                {% endif %}
+            </div>
+            <div style="margin-top: 8px;">
+                <span class="tag tag-success">{{ student.subjects }}</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="favorite-btn" data-target-role="student" data-target-id="{{ student.id }}" style="border: none; background: transparent; cursor: pointer; font-size: 24px; color: #FACC15;">{% if student.id in favorite_ids %}★{% else %}☆{% endif %}</button>
+                <a href="{{ url_for('student_detail', student_id=student.id) }}" class="btn btn-sm">查看详情</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <p>暂无符合条件的需求</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="btn-group">
+    <a href="{{ url_for('tutor_home') }}" class="btn btn-secondary">返回主页</a>
+</div>
+
+<script>
+    function updateFavoriteButtons(targetRole, targetId, favorited) {
+        const selector = `.favorite-btn[data-target-role="${targetRole}"][data-target-id="${targetId}"]`;
+        document.querySelectorAll(selector).forEach((btn) => {
+            btn.textContent = favorited ? '★' : '☆';
+        });
+    }
+
+    async function toggleFavorite(buttonEl) {
+        const targetRole = buttonEl.dataset.targetRole;
+        const targetId = Number(buttonEl.dataset.targetId);
+        const response = await fetch('/favorite/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_role: targetRole, target_profile_id: targetId })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            alert(data.error || '操作失败');
+            return;
+        }
+        updateFavoriteButtons(targetRole, targetId, data.favorited);
+    }
+
+    document.querySelectorAll('.favorite-btn').forEach((buttonEl) => {
+        buttonEl.addEventListener('click', () => {
+            toggleFavorite(buttonEl);
+        });
+    });
+</script>
+{% endblock %}

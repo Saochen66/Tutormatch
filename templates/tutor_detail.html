@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}家教详情 - 家教服务系统{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>家教详情</h1>
+</div>
+
+<div class="card">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <img src="{{ url_for('static', filename='uploads/' + tutor.avatar_path) if tutor.avatar_path else 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234F46E5%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2240%22>👨‍🏫</text></svg>' }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: var(--shadow-lg);" alt="头像">
+    </div>
+    
+    <div class="info-row">
+        <span class="info-label">昵称</span>
+        <span class="info-value" style="font-weight: 600;">{{ tutor.user.nickname }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">性别</span>
+        <span class="info-value"><span class="badge badge-primary">{{ tutor.gender }}</span></span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">擅长科目</span>
+        <span class="info-value">
+            {% for s in tutor.subjects.split(',') %}
+            <span class="tag">{{ s }}</span>
+            {% endfor %}
+        </span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">授课年级</span>
+        <span class="info-value">
+            {% for g in tutor.grades.split(',') %}
+            <span class="tag tag-success">{{ g }}</span>
+            {% endfor %}
+        </span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">授课方式</span>
+        <span class="info-value">{{ tutor.teaching_mode }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">期望费用</span>
+        <span class="info-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">{{ tutor.fee }} 元/小时</span>
+    </div>
+    
+    {% if tutor_teaching_time %}
+    <div class="info-row" style="flex-direction: column; gap: 8px;">
+        <span class="info-label" style="width: auto;">授课时间</span>
+        <span class="info-value">
+            {% for day, time in tutor_teaching_time.items() %}
+            <span class="tag tag-warning">{{ day }} {{ time.start }}-{{ time.end }}</span>
+            {% endfor %}
+        </span>
+    </div>
+    {% endif %}
+    
+    {% if tutor.introduction %}
+    <div class="info-row">
+        <span class="info-label">自我介绍</span>
+        <span class="info-value">{{ tutor.introduction }}</span>
+    </div>
+    {% endif %}
+    
+    {% if tutor.wechat %}
+    <div class="info-row">
+        <span class="info-label">微信号</span>
+        <span class="info-value" style="font-weight: 600; color: var(--secondary);">{{ tutor.wechat }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="btn-group">
+    <a href="{{ url_for('search_tutors') }}" class="btn btn-secondary">返回列表</a>
+    <a href="{{ url_for('tutor_reviews', tutor_id=tutor.id) }}" class="btn btn-primary">★ 查看评价</a>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}AI助手 - 家教服务系统{% endblock %}
+{% block content %}
+<div style="margin-bottom: 12px;">
+    <button id="assistant-back-btn" class="btn btn-secondary" type="button" style="padding: 10px 16px;">← 返回上一页</button>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 20px 24px; border-bottom: 1px solid var(--gray-100); background: linear-gradient(135deg, #0EA5E9, #2563EB); color: white;">
+        <h1 style="color: white; text-align: left; margin-bottom: 4px; font-size: 24px;">AI 智能助手</h1>
+        <div style="font-size: 13px; opacity: 0.95;">可基于当前系统数据库摘要回答使用问题与匹配建议</div>
+    </div>
+
+    <div id="assistant-messages" style="height: 460px; overflow-y: auto; background: #F8FAFC; padding: 18px;"></div>
+
+    <div style="border-top: 1px solid var(--gray-100); padding: 14px; background: white;">
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+            <textarea id="assistant-input" placeholder="例如：我现在作为家教，还差哪些信息会影响匹配？" rows="2" style="flex: 1; border: 2px solid var(--gray-200); border-radius: 12px; padding: 12px; font-size: 14px; resize: none;"></textarea>
+            <button id="assistant-send" class="btn">发送</button>
+        </div>
+        <div style="margin-top: 8px; font-size: 12px; color: var(--gray-500);">提示：助手不会返回他人的密码、手机号、邮箱等敏感信息。</div>
+    </div>
+</div>
+
+<script>
+    const messagesEl = document.getElementById('assistant-messages');
+    const inputEl = document.getElementById('assistant-input');
+    const sendEl = document.getElementById('assistant-send');
+    const backBtnEl = document.getElementById('assistant-back-btn');
+    const history = [];
+
+    function appendMessage(role, content) {
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.marginBottom = '12px';
+        wrap.style.justifyContent = role === 'user' ? 'flex-end' : 'flex-start';
+
+        const bubble = document.createElement('div');
+        bubble.textContent = content;
+        bubble.style.maxWidth = '78%';
+        bubble.style.whiteSpace = 'pre-wrap';
+        bubble.style.wordBreak = 'break-word';
+        bubble.style.padding = '10px 12px';
+        bubble.style.borderRadius = '10px';
+        bubble.style.fontSize = '14px';
+        bubble.style.lineHeight = '1.5';
+
+        if (role === 'user') {
+            bubble.style.background = '#2563EB';
+            bubble.style.color = '#fff';
+        } else {
+            bubble.style.background = '#fff';
+            bubble.style.border = '1px solid #E2E8F0';
+            bubble.style.color = '#0F172A';
+        }
+
+        wrap.appendChild(bubble);
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        return bubble;
+    }
+
+    async function sendMessage() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        sendEl.disabled = true;
+        appendMessage('user', text);
+        history.push({ role: 'user', content: text });
+        inputEl.value = '';
+
+        const waitingBubble = appendMessage('assistant', '正在分析数据库信息并生成回复...');
+
+        try {
+            const response = await fetch('/api/assistant/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    history: history
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || '请求失败');
+            }
+
+            waitingBubble.textContent = data.reply;
+            history.push({ role: 'assistant', content: data.reply });
+        } catch (error) {
+            waitingBubble.textContent = '请求失败：' + error.message;
+            waitingBubble.style.color = '#B91C1C';
+            waitingBubble.style.borderColor = '#FCA5A5';
+            waitingBubble.style.background = '#FEF2F2';
+        } finally {
+            sendEl.disabled = false;
+            inputEl.focus();
+        }
+    }
+
+    sendEl.addEventListener('click', sendMessage);
+    backBtnEl.addEventListener('click', () => {
+        const ref = document.referrer || '';
+        if (ref && ref.startsWith(window.location.origin)) {
+            window.location.href = ref;
+            return;
+        }
+
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        window.location.href = '/';
+    });
+
+    inputEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+
+    appendMessage('assistant', '你好，我是家教系统智能助手。你可以问我：如何提高匹配成功率、当前供需情况、你还缺哪些资料等。');
+</script>
+{% endblock %}
